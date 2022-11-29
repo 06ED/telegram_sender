@@ -2,12 +2,12 @@ import json
 import asyncio
 
 from telethon import TelegramClient
-from telethon.errors import FloodError
 from telethon.tl.functions.users import GetFullUserRequest
 
 sended_users = []
 flood_errors = {}
 max_errors = 50
+
 users = list(set([us for us in open("users.txt", "r", encoding="utf-8").read().split("\n") if us != ""]))
 message = open("message.txt", "r", encoding="utf-8").read()
 errors = open("errors.txt", "w", encoding="utf-8")
