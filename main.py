@@ -1,8 +1,9 @@
 import json
 import asyncio
+import random
 
 from telethon import TelegramClient
-from telethon.errors import FloodWaitError
+from telethon.errors import FloodWaitError, PeerFloodError
 from telethon.tl.functions.users import GetFullUserRequest
 
 sended_users = []
@@ -64,18 +65,20 @@ async def main():
                 print("Flood error, wait")
                 counter = 1
                 while True:
-                    await asyncio.sleep(round(1 * counter / 2), round(20 * counter / 2))
+                    await asyncio.sleep(random.randint(round(1 * counter / 5), round(20 * counter / 5)))
                     try:
                         await send_for_user(app, username)
                         break
                     except FloodWaitError:
-                        if counter >= 10:
+                        if counter >= 20:
                             print("This account cannot send messages automatically")
                             await save_data()
                             exit_(0)
                             break
                         counter += 1
                         continue
+            except PeerFloodError:
+                await asyncio.sleep(random.randint(1, 30))
             except Exception as error:
                 print(error.__class__.__name__)
                 await log_error(error.__class__.__name__)
