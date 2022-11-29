@@ -2,6 +2,7 @@ import json
 import asyncio
 
 from telethon import TelegramClient
+from telethon.errors import FloodWaitError
 from telethon.tl.functions.users import GetFullUserRequest
 
 sended_users = []
@@ -16,6 +17,11 @@ with open("user.json", "r", encoding="utf-8") as j_file:
     api_name, api_id, api_hash = user_file["name"], user_file["api_id"], user_file["api_hash"]
 
 
+def exit_(code):
+    input("press any key to close the window")
+    exit(code)
+
+
 async def log_error(err_name):
     flood_errors[err_name] = flood_errors[err_name] + 1 if err_name in flood_errors else 1
     errors.write(err_name + "\n")
@@ -26,7 +32,7 @@ async def check_errors():
         if counter >= max_errors:
             await save_data()
             print(f"Broke because a lot of {err} errors")
-            exit(0)
+            exit_(0)
 
 
 async def get_user(app: TelegramClient, username):
@@ -43,18 +49,39 @@ async def save_data():
                     deleting_send_users.write(user + "\n")
 
 
+async def send_for_user(app, username):
+    user = await get_user(app, username)
+    await app.send_message(user.to_dict()["full_user"]["id"], message)
+    sended_users.append(username)
+
+
 async def main():
     async with TelegramClient(api_name, api_id, api_hash) as app:
         for username in users:
             try:
-                user = await get_user(app, username)
-                await app.send_message(user.to_dict()["full_user"]["id"], message)
-                sended_users.append(username)
+                await send_for_user(app, username)
+            except FloodWaitError:
+                print("Flood error, wait")
+                counter = 1
+                while True:
+                    await asyncio.sleep(round(1 * counter / 2), round(20 * counter / 2))
+                    try:
+                        await send_for_user(app, username)
+                        break
+                    except FloodWaitError:
+                        if counter >= 10:
+                            print("This account cannot send messages automatically")
+                            await save_data()
+                            exit_(0)
+                            break
+                        counter += 1
+                        continue
             except Exception as error:
                 print(error.__class__.__name__)
                 await log_error(error.__class__.__name__)
                 await check_errors()
     await save_data()
+    exit_(0)
 
 
 if __name__ == '__main__':
