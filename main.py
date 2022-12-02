@@ -1,6 +1,7 @@
 import json
 import asyncio
 import random
+import traceback
 
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError, PeerFloodError
@@ -75,9 +76,13 @@ async def main():
             app = TelegramClient(api_name, api_id, api_hash)
             app.start()
         except Exception as error:
-            print(error.__class__.__name__)
-            await log_error(error.__class__.__name__)
-            await check_errors()
+            print(traceback.format_exc())
+            print(error)
+            # print(error.args)
+            # print(error.__class__.__name__)
+            # print(error)
+            # await log_error(error.__class__.__name__)
+            # await check_errors()
     await save_data()
     exit_(0)
 
