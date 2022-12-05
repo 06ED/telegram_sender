@@ -20,9 +20,8 @@ with open("user.json", "r", encoding="utf-8") as j_file:
     wait = user_file["wait"]
 
 
-def exit_(code):
-    input("press any key to close the window")
-    exit(code)
+async def exit_(code):
+    await save_data()
 
 
 async def log_error(err_name):
@@ -35,7 +34,7 @@ async def check_errors():
         if counter >= max_errors:
             await save_data()
             print(f"Broke because a lot of {err} errors")
-            exit_(0)
+            await exit_(0)
 
 
 async def get_user(app: TelegramClient, username):
@@ -59,32 +58,41 @@ async def send_for_user(app, username):
 
 
 async def main():
-    app = TelegramClient(api_name, api_id, api_hash)
-    app.start()
-    for username in users:
-        try:
-            await send_for_user(app, username)
-        except FloodWaitError:
-            print("Flood error, wait")
-            if wait:
-                await asyncio.sleep(random.randint(10, 40))
-            app = TelegramClient(api_name, api_id, api_hash)
-            app.start()
-        except PeerFloodError:
-            if wait:
-                await asyncio.sleep(random.randint(10, 40))
-            app = TelegramClient(api_name, api_id, api_hash)
-            app.start()
-        except Exception as error:
-            print(traceback.format_exc())
-            print(error)
-            # print(error.args)
-            # print(error.__class__.__name__)
-            # print(error)
-            # await log_error(error.__class__.__name__)
-            # await check_errors()
-    await save_data()
-    exit_(0)
+    try:
+        app = TelegramClient(api_name, api_id, api_hash)
+        await app.start()
+
+        for username in users:
+            try:
+                await send_for_user(app, username)
+            except FloodWaitError:
+                await save_data()
+                print("Flood error, wait")
+                if wait:
+                    await asyncio.sleep(random.randint(10, 40))
+                await app.disconnect()
+                app = TelegramClient(api_name, api_id, api_hash)
+                await app.start()
+                print("FloodWaitError")
+            except PeerFloodError:
+                await save_data()
+                if wait:
+                    await asyncio.sleep(random.randint(10, 40))
+                await app.disconnect()
+                app = TelegramClient(api_name, api_id, api_hash)
+                await app.start()
+                print("PeerFloodError")
+            except Exception as error:
+                print(traceback.format_exc())
+                print(error)
+            except BaseException as based:
+                print(traceback.format_exc())
+                print(based)
+                await save_data()
+        await save_data()
+        await exit_(0)
+    except KeyboardInterrupt:
+        await save_data()
 
 
 if __name__ == '__main__':

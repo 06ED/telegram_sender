@@ -1,6 +1,6 @@
 {
-  "wait": true,
-  "name": "",
-  "api_hash": "",
-  "api_id": 0
+  "wait": false,
+  "name": "MyApp",
+  "api_hash": "ac8172023da9e8e1aad1c081b63db1db",
+  "api_id": 20065589
 }
